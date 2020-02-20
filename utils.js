@@ -1,3 +1,4 @@
+var axios = require('axios');
 var exec = require('child_process').exec;
 var fs = require('fs');
 var readline = require('readline');
@@ -117,23 +118,59 @@ console.log('\033[0;33m', '>>>>  execAsync callback stderr ', stderr  , '\033[0m
   });
 };
 
+// ############################################################################
 
 exports.loadFile = function(file) {
   return new Promise(function(resolve) {
-    // console.log('\033[036m', '>>>> file ' , errFile , '\033[0m' );
     var lineReader = readline.createInterface({
       input: fs.createReadStream(file)
     });
 
     var lines = [];
     lineReader.on('line', function (line) {
-      // if (!~line.indexOf('//'))
-        lines.push(line);
+      lines.push(line);
     }).on('close', () => {
-      // resolve(processErrorFile(file, lines));
-      // processErrorFile(file, lines, errType);
-      const fieldName = lines.shift().split(':')[1].trim();
-      resolve({fieldName, jql: lines.filter(line => !~line.indexOf('//')).join(' ')});
+      const fieldline = lines.shift();
+      let fieldInfo = fieldline.split(':');
+      fieldInfo.shift();
+      fieldInfo = JSON.parse(fieldInfo.join(':').trim().replace(/'/g, '"'));
+      resolve({fieldInfo, jql: lines.filter(line => !~line.indexOf('//')).join(' ')});
     });
   });
-}
+};
+
+
+exports.getJqlInfo = function(dateRange) {
+  return fs.readdirAsync('./JQL')
+    .then(function(files) {
+      const proms = files.map(file => {
+        return exports.loadFile(`JQL/${file}`)
+          .then(result => {
+            let {fieldInfo, jql} = result;
+// console.log(`\x1B[0;36m`, `>>>> fieldInfo2 ` , fieldInfo , `\x1B[0m` );
+            return Object.keys(fieldInfo).map(fieldName => {
+              const jqlFormatted = jql.replace('@@params', JSON.stringify({'from_date': dateRange.from[fieldInfo[fieldName]], 'to_date': dateRange.to_date}));
+// console.log(`\x1B[0;36m`, `>>>>  `, fieldName, fieldInfo[fieldName] , dateRange.from[fieldInfo[fieldName]], {'from_date': dateRange.from[fieldInfo[fieldName]], 'to_date': dateRange.to_date} , jqlFormatted, `\x1B[0m` );
+              return {fieldName, jql: jqlFormatted};
+            });
+
+          });
+      });
+
+      return Promise.all(proms);
+    });
+};
+
+exports.writeDataFile = function(filename, contents) {
+
+  var filepath = './data/' + filename + '.json';
+  console.log('\x1B[0;36m', ' - Writing datafiles:', filepath  , '\x1B[0m' );
+  try {
+    fs.writeFileSync(filepath, JSON.stringify(contents, null, 2));
+  }
+  catch(e) {
+    // fs.writeFileSync(filepath, contents);
+    console.log(`\x1B[0;31m`, `>>>> Erroor writing data file: ${filepath} `, e , contents , `\x1B[0m` );
+  }
+  return contents;
+};

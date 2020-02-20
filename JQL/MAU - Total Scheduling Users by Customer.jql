@@ -1,7 +1,11 @@
-// FIELDINFO : {"Users__c": "from_date_30", "X60_Day_Active_Users__c": "from_date_60", "X90_Day_Active_Users__c": "from_date_90"}
+// FIELDINFO : {"Scheduling_30_Day_Users__c": "from_date_30", "Scheduling_60_Day_Users__c": "from_date_60", "Scheduling_90_Day_Users__c": "from_date_90"}
 function main() {
   return Events(@@params)
   .filter(function(event) {
+
+    if (event.name.indexOf("Schedule and Dispatch")) {
+      return;
+    }
 
     if (event.properties.$current_url !== undefined) {
       if (~event.properties.$current_url.indexOf(".cs")) {

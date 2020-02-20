@@ -18,6 +18,8 @@ mixpanel-info.js
 *.log
 *.json
 
+*.mock.js
+
 ## Ignore all generated files
 /coverage
 /rdoc
@@ -48,6 +50,7 @@ dist
 *.vi
 *~
 *.sass-cache
+credentials*
 
 # OS or Editor folders
 .DS_Store

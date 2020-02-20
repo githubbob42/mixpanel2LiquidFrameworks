@@ -1,7 +1,11 @@
-// FIELDINFO : {"Users__c": "from_date_30", "X60_Day_Active_Users__c": "from_date_60", "X90_Day_Active_Users__c": "from_date_90"}
+// FIELDNAME : {"CPQ_30_Day_Event_Count__c": "from_date_30", "CPQ_60_Day_Event_Count__c": "from_date_60", "CPQ_90_Day_Event_Count__c": "from_date_90"}
 function main() {
   return Events(@@params)
   .filter(function(event) {
+
+    if (!~event.name.indexOf("Rule")) {
+      return;
+    }
 
     if (event.properties.$current_url !== undefined) {
       if (~event.properties.$current_url.indexOf(".cs")) {
@@ -91,6 +95,6 @@ function main() {
 
   })
   .groupBy(["distinct_id", "properties.organizationid"], mixpanel.reducer.count())
-// .groupBy(mixpanel.multiple_keys(["distinct_id","properties.organization"]), mixpanel.reducer.count())
+  // .groupBy(mixpanel.multiple_keys(["distinct_id","properties.organization"]), mixpanel.reducer.count())
   .groupBy([mixpanel.slice("key", 1)], mixpanel.reducer.count());
 }
