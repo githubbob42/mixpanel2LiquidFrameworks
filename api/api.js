@@ -6,22 +6,23 @@ const packageInfo = require('../package-info').PackageInfo;
 const MOCK_licenseData = require('./mock/license-data.mock').LicenseData;
 const MOCK_mixpanelData = require('./mock/mixpanel-data.mock').MixanelData;
 const MOCK_accountData = require('./mock/account-data.mock').AccountData;
-const useMocks = false;
-const showData = false;
-const saveData = !useMocks && true;
+
+const useMocks = false; // if true, use data from `./api/mock` folder instead of MP/SFDC API
+const showData = false; // if true, show data that was retrieved (very verbose)
+const saveData = !useMocks && true; // if true (and useMocks=false), will save the data retrive via the API in the `./data` folder
 
 exports.getMixanelData = function(mpInfo, jqlInfoResults) {
-// console.log(`\x1B[0;32m`, `>>>> jqlInfoResults ` , jqlInfoResults.flat() , `\x1B[0m` );
 
   if (useMocks) {
     console.log(`\x1B[0;31m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
     console.log(`\x1B[0;31m`, `>>>> !!!!!!!   MOCK DATA BEING USED   !!!!!!!! `  , `\x1B[0m` );
     console.log(`\x1B[0;31m`, `>>>> !!!!!!!       getMixanelData     !!!!!!!! `  , `\x1B[0m` );
     console.log(`\x1B[0;31m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
-console.log(`\x1B[0;32m`, `>>>> mixpanel orgs: `, Object.keys(MOCK_mixpanelData.mock).length, Object.keys(MOCK_mixpanelData.mock)  , `\x1B[0m` );
+    console.log(`\x1B[0;32m`, `>>>> mixpanel orgs: `, Object.keys(MOCK_mixpanelData.mock).length, Object.keys(MOCK_mixpanelData.mock)  , `\x1B[0m` );
     return Promise.resolve(MOCK_mixpanelData.mock)
   }
 
+  // MixPanel has an API Rate Limit of 5 concurrent requests so we need to run these in serial
   const getMixanelDataRequests = (jqlInfoResults || []).flat().map(jqlInfo => {
     return function getMixanelDataRequest() {
       return axios({
@@ -52,9 +53,6 @@ console.log(`\x1B[0;32m`, `>>>> mixpanel orgs: `, Object.keys(MOCK_mixpanelData.
   return getMixanelDataRequests.reduce(function(current, next) {
     return current.then(function() {
       return next().then(function(result) {
-// console.log(`\x1B[0;32m`, `>>>>  ${result.jqlInfo.fieldName} done`  , `\x1B[0m` );
-// // console.log(`\x1B[0;32m`, `>>>> result ` , JSON.stringify(result.data, null, 2) , `\x1B[0m` );
-// console.log(`\x1B[0;32m`, `>>>> result ` , result , `\x1B[0m` );
         return result.data.reduce((hash, data) => {
           if (data.key[0]) {
             hash[data.key[0]] = {...hash[data.key[0]], [result.jqlInfo.fieldName]: data.value};
@@ -117,7 +115,6 @@ exports.queryLicenseInfo = function(connection, packageInfo) {
     return Promise.resolve(MOCK_licenseData.mock.records)
       .then(licenses => {
         return licenses.reduce((hash, data) => {
-// console.log(`\x1B[0;36m`, `>>>> account `, data  , `\x1B[0m` );
           hash[data.sfLma__Subscriber_Org_ID__c] = {...data};
           return hash;
         }, {});
@@ -132,9 +129,6 @@ exports.queryLicenseInfo = function(connection, packageInfo) {
       })
   }
 
-  // const soql = `SELECT Pkg_Name__c, sfLma__Licensed_Seats__c, sfLma__Used_Licenses__c
-  //               FROM sfLma__License__c
-  //               WHERE sfLma__Subscriber_Org_ID__c = '00D15000000FM8g' AND sfLma__Package__c = 'a0k30000003xIvvAAE'`;
   const soql = [`SELECT sfLma__Account__c, sfLma__Subscriber_Org_ID__c, sfLma__Package__c, Pkg_Name__c, sfLma__Licensed_Seats__c, sfLma__Used_Licenses__c`,
                 `FROM sfLma__License__c`,
                 `WHERE sfLma__Package__c IN ('${Object.values(packageInfo).join("', '")}')`,
@@ -147,8 +141,6 @@ exports.queryLicenseInfo = function(connection, packageInfo) {
                 `AND Account_Type__c = 'Customer'`,
                 `AND sfLma__Subscriber_Org_ID__c != null`,
                 `order by sfLma__Subscriber_Org_ID__c`];
-                // WHERE sfLma__Package__c = '${pkgInfo[1]}'
-
 
   var opts = {
     retry: 1,
@@ -164,17 +156,14 @@ exports.queryLicenseInfo = function(connection, packageInfo) {
     }
   };
 
-console.log(`\x1B[0;32m`, `>>>> Retrieving License Data `  , `\x1B[0m` );
+  console.log(`\x1B[0;32m`, `>>>> Retrieving License Data `  , `\x1B[0m` );
 
-  // console.log(`\x1B[0;36m`, `>>>> opts ` , opts , `\x1B[0m` );
   return axios(opts)
     .then(function(response) {
-// console.log(`\x1B[0;33m`, `>>>> queryLicenseInfo raw ` , response , `\x1B[0m` );
       return response && response.data && response.data.records || [];
     })
     .catch(function(error) {
       console.log('\x1B[0;31m', '>>>> ERROR: getLicenseInfo ' , error.response && error.response.data, opts , '\x1B[0m' );
-      // console.log('\x1B[0;31m', '>>>> data ' , sobjectType, JSON.stringify(data, null, 2) , '\x1B[0m' );
       throw error.response && error.response.data && error.response.data[0] || error;
     });
 
@@ -183,7 +172,6 @@ console.log(`\x1B[0;32m`, `>>>> Retrieving License Data `  , `\x1B[0m` );
 exports.getLicenseInfo = function(connection, packageInfo) {
   return exports.queryLicenseInfo(connection, packageInfo)
     .then(licenseResults => {
-// console.log(`\x1B[0;32m`, `>>>> queryLicenseInfo result ` , result , `\x1B[0m` );
 
       if (saveData) utils.writeDataFile('license-data.raw', licenseResults);
 
@@ -223,65 +211,9 @@ exports.getLicenseInfo = function(connection, packageInfo) {
   });
 };
 
-exports.getAccountData = function(connection) {
-  if (useMocks) {
-    return Promise.resolve(MOCK_accountData.mock.records)
-      .then(accounts => {
-        return accounts.reduce((hash, data) => {
-          hash[data.Mixpanel_Production_Org_ID__c] = {...data};
-          return hash;
-        }, {});
-      })
-      .then(results => {
-        console.log(`\x1B[0;31m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
-        console.log(`\x1B[0;31m`, `>>>> !!!!!!!   MOCK DATA BEING USED   !!!!!!!! `  , `\x1B[0m` );
-        console.log(`\x1B[0;31m`, `>>>> !!!!!!!      getAccountData      !!!!!!!! `  , `\x1B[0m` );
-        console.log(`\x1B[0;31m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
-        console.log(`\x1B[0;32m`, `>>>> account orgs: `, Object.keys(results).length, Object.keys(results)  , `\x1B[0m` );
-        return results;
-      })
-  }
-
-  console.log(`\x1B[0;32m`, `>>>> Retrieving Account Data `  , `\x1B[0m` );
-
-  return connection
-    .sobject('Account')
-    .select('Id, Name, AccountNumber, Account_Name_Unique__c, Mixpanel_Name__c, Mixpanel_Production_Org_ID__c')
-    .where(`Mixpanel_Production_Org_ID__c != null`)
-    .execute()
-    .then(records => {
-      // console.log('getAccountInfo:', records);
-      return records;
-    })
-    .then(accounts => {
-      if (saveData) utils.writeDataFile('account-data.raw', accounts);
-
-      return accounts.reduce((hash, data) => {
-        hash[data.Mixpanel_Production_Org_ID__c] = {...data};
-        return hash;
-      }, {});
-    })
-    .then(data => {
-      if (showData) {
-        console.log(`\x1B[0;36m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
-        console.log(`\x1B[0;36m`, `>>>> !!!!!!!       getAccountData     !!!!!!!! `  , `\x1B[0m` );
-        console.log(`\x1B[0;36m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
-        console.log(`\x1B[0;36m`, `>>>> account orgs: `, Object.keys(data).length, Object.keys(data)  , `\x1B[0m` );
-        console.log(`\x1B[0;36m`, `>>>> account data: `, data  , `\x1B[0m` );
-      }
-      if (saveData) utils.writeDataFile('account-data', data);
-      return data;
-    });
-    // SELECT Id, Name, AccountNumber,Account_Name_Unique__c,
-    // Mixpanel_Name__c, Mixpanel_Production_Org_ID__c,
-    // RecordTypeId,Record_Type_Name__c
-    // FROM Account
-    // where Mixpanel_Production_Org_ID__c != null
-}
-
+// ############################################################################
 
 exports.createMonthlyActiveUsageEntry = function(connection, monthlyActiveUsageData) {
-  // console.log(`\x1B[0;32m`, `>>>> connection ` , connection , `\x1B[0m` );
   return connection
     .sobject('Monthly_Active_Usage__c')
     .create(monthlyActiveUsageData)
@@ -290,7 +222,6 @@ exports.createMonthlyActiveUsageEntry = function(connection, monthlyActiveUsageD
         console.log(`\x1B[0;31m`, `>>>>  ERROR: createMonthlyActiveUsageEntry`, result.errors  , `\x1B[0m` );
         return;
       }
-
       return result.id;
     })
     .catch(err => {
