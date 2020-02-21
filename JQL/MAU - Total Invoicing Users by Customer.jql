@@ -1,11 +1,30 @@
 // IMPORTANT:  Do not remove/modify the next 2 lines other than modifying the dates:  THIS FILE IS USED BY AN AUTOMATED PROCESS.
-// FIELDNAMES : {"CPQ_30_Day_Event_Count__c": "from_date_30", "CPQ_60_Day_Event_Count__c": "from_date_60", "CPQ_90_Day_Event_Count__c": "from_date_90"}
+// FIELDNAMES : {"Inv_30_Day_Users__c": "from_date_30", "Inv_60_Day_Users__c": "from_date_60", "Inv_90_Day_Users__c": "from_date_90"}
 let __params__ = { from_date: "2020-01-18", to_date: "2020-02-18" };
 function main() {
   return Events(__params__)
   .filter(function(event) {
 
-    if (!~event.name.indexOf("Rule")) {
+    let TktEvents= [
+      "CreditMemo Builder : Invoice Items Add All",
+      "CreditMemo Builder : Invoice Items Add Selected",
+      "CreditMemo Builder : Price Book Items Add Selected",
+      "CreditMemo Builder Loaded",
+      "CreditMemoAppliedCreated",
+      "CreditMemoCreated",
+      "invoice Builder : Bulk Editor Update clicked",
+      "Invoice Builder : Delete Selected clicked",
+      "Invoice Builder : Price Book Items Add All",
+      "Invoice Builder : Price Book Items Add Selected",
+      "Invoice Builder : Ticket Items Add All",
+      "Invoice Builder : Ticket Items Add Selected",
+      "Invoice Builder Loaded",
+      "InvoiceCreated",
+      "PaymentAppliedCreated",
+      "PaymentAppliedEdited",
+      "PaymentCreated"
+      ];
+    if (!~TktEvents.indexOf(event.name)) {
       return;
     }
 
@@ -74,7 +93,6 @@ function main() {
           ~event.properties.organization.indexOf("Tarantula #3") ||
           ~event.properties.organization.indexOf("OOTB Test") ||
           ~event.properties.organization.indexOf("Noble Casing, Inc. SB") ||
-          ~event.properties.organization.indexOf("Koch Engineered Solutions") ||
           ~event.properties.organization.indexOf("Exadel") ||
           ~event.properties.organization.indexOf("Copy Test") ||
           ~event.properties.organization.indexOf("Burris Test") ||
@@ -97,6 +115,6 @@ function main() {
 
   })
   .groupBy(["distinct_id", "properties.organizationid"], mixpanel.reducer.count())
-  // .groupBy(mixpanel.multiple_keys(["distinct_id","properties.organization"]), mixpanel.reducer.count())
+// .groupBy(mixpanel.multiple_keys(["distinct_id","properties.organization"]), mixpanel.reducer.count())
   .groupBy([mixpanel.slice("key", 1)], mixpanel.reducer.count());
 }

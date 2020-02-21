@@ -1,9 +1,65 @@
-// FIELDINFO : {"Tkt_30_Day_Users__c": "from_date_30", "Tkt_60_Day_Users__c": "from_date_60", "Tkt_90_Day_Users__c": "from_date_90"}
+// IMPORTANT:  Do not remove/modify the next 2 lines other than modifying the dates:  THIS FILE IS USED BY AN AUTOMATED PROCESS.
+// FIELDNAMES : {"Tkt_30_Day_Users__c": "from_date_30", "Tkt_60_Day_Users__c": "from_date_60", "Tkt_90_Day_Users__c": "from_date_90"}
+let __params__ = { from_date: "2020-01-18", to_date: "2020-02-18" };
 function main() {
-  return Events(@@params)
+  return Events(__params__)
   .filter(function(event) {
 
-    let TktEvents= ["CatalogItem", "Checklist", "CrewPlanningEdited","AppFocus", "AppLoaded", "FileAttached", "Geolocation", "JobCopied", "JobCreated", "PriceBook", "Quote", "Report", "Status", "Sync", "Ticket"];
+    let TktEvents= [
+      "TicketItemEdited",
+      "TicketEdited",
+      "JobEdited",
+      "StatusChanged",
+      "AppLoaded",
+      "StatusHistoryCreated",
+      "QuoteItemEdited",
+      "TicketItemAdded",
+      "PriceBookEdited",
+      "QuoteEdited",
+      "TicketLogEdited",
+      "TicketLogCreated",
+      "Sync Duration",
+      "CatalogItemEdited",
+      "KeywordSearch",
+      "ViewReport",
+      "ReportAttached",
+      "TicketCreated",
+      "QuoteItemCreated",
+      "PriceBookItemCreated",
+      "TicketItemsSelectedByUser",
+      "ViewExistingReport",
+      "Ticket Builder Loaded",
+      "JobCreated",
+      "TicketItemDeleted",
+      "Ticket Builder : Price Book Items Add Selected",
+      "FileAttached",
+      "TicketItemsCopied",
+      "FXFormCreated",
+      "ReportSigned",
+      "TicketAddedToJob",
+      "ShowMore",
+      "StatusHistoryEdited",
+      "TicketItemsFilteredByRecordType",
+      "ReportTemplateChanged",
+      "TicketItemCreated",
+      "ReportPrinted",
+      "TicketItemGridEdit",
+      "TicketItemsPickerColumnFilter",
+      "ChecklistStepSet",
+      "TicketCopied",
+      "Ticket Builder : Delete Selected clicked",
+      "TicketItemsSelectedByCopy",
+      "TicketBulkEditProcessed",
+      "AppFocusLost",
+      "AppFocusRestored",
+      "Quote Builder Loaded",
+      "CatalogItemCreated",
+      "Quote Builder : Price Book Items Add Selected",
+      "Invoice Builder Loaded",
+      "Ticket Builder : Bulk Editor Update clicked",
+      "Ticket Builder : Copy Selected clicked",
+      "InvoiceCreated"
+      ];
     if (!~TktEvents.indexOf(event.name)) {
       return;
     }
@@ -73,7 +129,6 @@ function main() {
           ~event.properties.organization.indexOf("Tarantula #3") ||
           ~event.properties.organization.indexOf("OOTB Test") ||
           ~event.properties.organization.indexOf("Noble Casing, Inc. SB") ||
-          ~event.properties.organization.indexOf("Koch Engineered Solutions") ||
           ~event.properties.organization.indexOf("Exadel") ||
           ~event.properties.organization.indexOf("Copy Test") ||
           ~event.properties.organization.indexOf("Burris Test") ||
@@ -96,6 +151,6 @@ function main() {
 
   })
   .groupBy(["distinct_id", "properties.organizationid"], mixpanel.reducer.count())
-  // .groupBy(mixpanel.multiple_keys(["distinct_id","properties.organization"]), mixpanel.reducer.count())
+// .groupBy(mixpanel.multiple_keys(["distinct_id","properties.organization"]), mixpanel.reducer.count())
   .groupBy([mixpanel.slice("key", 1)], mixpanel.reducer.count());
 }

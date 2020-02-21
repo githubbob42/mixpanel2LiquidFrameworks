@@ -1,11 +1,11 @@
 // IMPORTANT:  Do not remove/modify the next 2 lines other than modifying the dates:  THIS FILE IS USED BY AN AUTOMATED PROCESS.
-// FIELDNAMES : {"CPQ_30_Day_Event_Count__c": "from_date_30", "CPQ_60_Day_Event_Count__c": "from_date_60", "CPQ_90_Day_Event_Count__c": "from_date_90"}
+// FIELDNAMES : {"Timecards_30_Day_Users__c": "from_date_30", "Timecards_60_Day_Users__c": "from_date_60", "Timecards_90_Day_Users__c": "from_date_90"}
 let __params__ = { from_date: "2020-01-18", to_date: "2020-02-18" };
 function main() {
   return Events(__params__)
   .filter(function(event) {
 
-    if (!~event.name.indexOf("Rule")) {
+    if (!~event.name.indexOf("Timecard")) {
       return;
     }
 
@@ -97,6 +97,6 @@ function main() {
 
   })
   .groupBy(["distinct_id", "properties.organizationid"], mixpanel.reducer.count())
-  // .groupBy(mixpanel.multiple_keys(["distinct_id","properties.organization"]), mixpanel.reducer.count())
+// .groupBy(mixpanel.multiple_keys(["distinct_id","properties.organization"]), mixpanel.reducer.count())
   .groupBy([mixpanel.slice("key", 1)], mixpanel.reducer.count());
 }

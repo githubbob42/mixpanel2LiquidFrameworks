@@ -1,6 +1,8 @@
-// FIELDINFO : {"Scheduling_30_Day_Users__c": "from_date_30", "Scheduling_60_Day_Users__c": "from_date_60", "Scheduling_90_Day_Users__c": "from_date_90"}
+// IMPORTANT:  Do not remove/modify the next 2 lines other than modifying the dates:  THIS FILE IS USED BY AN AUTOMATED PROCESS.
+// FIELDNAMES : {"Scheduling_30_Day_Users__c": "from_date_30", "Scheduling_60_Day_Users__c": "from_date_60", "Scheduling_90_Day_Users__c": "from_date_90"}
+let __params__ = { from_date: "2020-01-18", to_date: "2020-02-18" };
 function main() {
-  return Events(@@params)
+  return Events(__params__)
   .filter(function(event) {
 
     if (event.name.indexOf("Schedule and Dispatch")) {
