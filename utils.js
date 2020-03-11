@@ -13,6 +13,26 @@ var readline = require('readline');
       .then(value => this.constructor.resolve(fn()).then(() => value))
       .catch(reason => this.constructor.resolve(fn()).then(() => { throw reason }))
   }
+
+  if (!Array.prototype.flat) {
+    Object.defineProperty(Array.prototype, 'flat', {
+      configurable: true,
+      value: function flat () {
+        var depth = isNaN(arguments[0]) ? 1 : Number(arguments[0]);
+
+        return depth ? Array.prototype.reduce.call(this, function (acc, cur) {
+          if (Array.isArray(cur)) {
+            acc.push.apply(acc, flat.call(cur, depth - 1));
+          } else {
+            acc.push(cur);
+          }
+
+          return acc;
+        }, []) : Array.prototype.slice.call(this);
+      },
+      writable: true
+    });
+  }
 })();
 
 
@@ -103,6 +123,7 @@ exports.getJqlInfo = function(dateRange) {
         return exports.loadFile(`JQL/${file}`)
           .then(lines => {
 
+            console.log("Working on file " + file);
             lines.shift(); // remove warning line
             const fieldline = lines.shift();
             lines.shift();  // remove existing "let __params__ = {...}" line and thrown away (will be added back later)
@@ -121,10 +142,15 @@ exports.getJqlInfo = function(dateRange) {
               return {fieldName, jql: jqlFormatted.join(' ')};
             });
 
+          }).catch(err =>{
+            console.log("Error reading file " + file);
           });
       });
 
-      return Promise.all(proms);
+      return Promise.all(proms)
+        .then(results => {
+          return results.filter(x => x); // filter out bad files.  I.e. .DS_Store, etc
+        })
     });
 };
 

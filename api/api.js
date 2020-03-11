@@ -23,29 +23,31 @@ exports.getMixanelData = function(mpInfo, jqlInfoResults) {
   }
 
   // MixPanel has an API Rate Limit of 5 concurrent requests so we need to run these in serial
-  const getMixanelDataRequests = (jqlInfoResults || []).flat().map(jqlInfo => {
-    return function getMixanelDataRequest() {
-      return axios({
-        url: "https://mixpanel.com/api/2.0/jql",
-        data: {script: `${jqlInfo.jql}`},
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Access-Control-Allow-Credentials": 'true',
-          "Access-Control-Allow-Origin": "*",
-        },
-        auth: {
-          username: mpInfo.backOfficeApi,
-        }
-      })
-      .then(results => {
-        return {data: results && results.data, jqlInfo};
-      })
-      .catch(error => {
-        console.log(`\x1B[0;31m`, `>>>> ERROR: getMixanelDataRequest ` , jqlInfo.fieldName, error.response && error.response.data && error.response.data.error, jqlInfo.jql , `\x1B[0m` );
-      });
-    }
-  });
+  const getMixanelDataRequests = (jqlInfoResults || []).flat()
+    .filter(x => x) // filter out bad files.  I.e. .DS_Store, etc
+    .map(jqlInfo => {
+      return function getMixanelDataRequest() {
+        return axios({
+          url: "https://mixpanel.com/api/2.0/jql",
+          data: {script: `${jqlInfo.jql}`},
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Access-Control-Allow-Credentials": 'true',
+            "Access-Control-Allow-Origin": "*",
+          },
+          auth: {
+            username: mpInfo.backOfficeApi,
+          }
+        })
+        .then(results => {
+          return {data: results && results.data, jqlInfo};
+        })
+        .catch(error => {
+          console.log(`\x1B[0;31m`, `>>>> ERROR: getMixanelDataRequest ` , jqlInfo.fieldName, error.response && error.response.data && error.response.data.error, jqlInfo.jql , `\x1B[0m` );
+        });
+      }
+    });
 
   console.log(`\x1B[0;32m`, `>>>> Retrieving Mixpanel Data `  , `\x1B[0m` );
 
@@ -74,14 +76,22 @@ exports.getMixanelData = function(mpInfo, jqlInfoResults) {
     return data;
   })
   .catch(e => {
-    return Promise.resolve(MOCK_mixpanelData.mock);
+    // Use this if you blow out your MixPanel rate limit but are still running tests
+    // return Promise.resolve(MOCK_mixpanelData.mock);
+
+    console.log(`\x1B[0;31m`, `>>>>  `  , `\x1B[0m` );
+    console.log(`\x1B[0;31m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
+    console.log(`\x1B[0;31m`, `>>>> !!!!!!! ERROR getMixanelData     !!!!!!!! `  , `\x1B[0m` );
+    console.log(`\x1B[0;31m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
+    console.log(`\x1B[0;31m`, e, jqlInfoResults  , `\x1B[0m` );
+    throw e;
   })
 
 };
 
 exports.getMonthlyActiveUsageDescription = function(connection) {
 
-  console.log(`\x1B[0;32m`, `>>>>  `, instanceUrl, version, accessToken  , `\x1B[0m` );
+  // console.log(`\x1B[0;32m`, `>>>>  `, instanceUrl, version, accessToken  , `\x1B[0m` );
 
   var opts = {
     retry: 1,

@@ -22,7 +22,7 @@ let dateRange = {to_date, from: {from_date_30, from_date_60, from_date_90}};
 const self = this;
 
 // ############################################################################
-const dryRun = false;
+const dryRun = true;
 // ############################################################################
 
 console.log(`\x1B[0;32m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
@@ -78,7 +78,7 @@ return utils.getJqlInfo(dateRange)
           return Promise.all(createRequests)
             .then(() => {
 
-              console.log(`\x1B[0;36m`, `>>>> Imported ${createRequests.length} records `  , `\x1B[0m` );
+              console.log(`\x1B[0;36m`, `>>>> Imported ${dryRun ? '(DRY RUN)' : ''} ${createRequests.length} records `  , `\x1B[0m` );
 
               console.log(`\x1B[0;32m`, `>>>> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! `  , `\x1B[0m` );
               console.log(`\x1B[0;32m`, `>>>> !!!!!!!           DONE           !!!!!!!! `  , `\x1B[0m` );
